@@ -1,0 +1,218 @@
+================================================================================
+                    INFORME DE ESTADO DEL PROYECTO StoreTic
+                              Fecha: 14 de enero de 2026
+================================================================================
+
+1. QUÉ YA HICIMOS
+================================================================================
+
+✅ Arquitectura & Stack definido
+   - Modelo Desktop ↔ FastAPI ↔ SQLite (dev) / PostgreSQL (prod)
+   - Separación clara: Desktop es cliente, Backend es API central
+   - Toda lógica pasa por endpoints, no hay acceso directo a BD desde Desktop
+
+✅ Backend funcional (FastAPI)
+   - Servidor en 127.0.0.1:8000
+   - Modelos SQLAlchemy: Product, Sale, SaleItem
+   - 2 routers implementados: /products y /sales
+   - Validaciones: stock insuficiente, productos inexistentes
+
+✅ Desktop funcional (CustomTkinter)
+   - UI completa: formulario crear productos + selector vender
+   - Comunicación HTTP con backend vía api_client.py
+   - Refresco de lista después de operaciones
+
+✅ Base de datos
+   - SQLite para desarrollo (test_connection.py validó 100%)
+   - Estructura lista para PostgreSQL en producción
+
+✅ Testing & Validación
+   - Código corregido y compilado
+   - Warnings resueltos (orm_mode → from_attributes)
+   - Imports verificados y funcionales
+
+
+2. ESTRUCTURA DEL PROYECTO
+================================================================================
+
+storetic_proy/
+├── storetic/
+│   ├── .ai/                          # Contexto del proyecto
+│   │   ├── project_state.md
+│   │   ├── project_rules.md
+│   │   ├── current_task.md
+│   │   └── status_reports/           # 📁 NUEVO: Registros de estado
+│   │       └── 2026_01_14_estado_proyecto.txt
+│   │
+│   ├── backend/                      # FastAPI
+│   │   ├── main.py                   # App FastAPI + routers
+│   │   ├── db.py                     # Configuración BD (SQLite dev)
+│   │   ├── models.py                 # SQLAlchemy models
+│   │   ├── schemas.py                # Pydantic schemas (v2)
+│   │   ├── test_connection.py        # Test BD ✅
+│   │   ├── routers/
+│   │   │   ├── __init__.py
+│   │   │   ├── products.py           # GET/POST /products
+│   │   │   └── sales.py              # POST /sales (con validación)
+│   │   └── storetic.db               # BD SQLite (generada)
+│   │
+│   ├── desktop/                      # CustomTkinter
+│   │   ├── main.py                   # UI con 2 secciones (crear + vender)
+│   │   └── api_client.py             # Cliente HTTP
+│   │
+│   ├── app_fastapi/                  # Entorno virtual Python
+│   │   ├── Scripts/
+│   │   │   ├── Activate.ps1
+│   │   │   └── ... (ejecutables)
+│   │   └── Lib/
+│   │       └── site-packages/        # Dependencias
+│   │
+│   └── requirements.txt              # Especificación dependencias
+│
+└── doc/                              # Documentación
+
+
+3. FLUJO DE TRABAJO
+================================================================================
+
+A. Crear Producto
+   Desktop UI (formulario)
+   ↓
+   POST /products
+   ↓
+   FastAPI valida datos
+   ↓
+   SQLite: INSERT product
+   ↓
+   ✓ Respuesta OK
+   ↓
+   Desktop: refresh lista
+
+B. Realizar Venta (CORE - FLUJO PRINCIPAL)
+   Desktop UI (selecciona producto + cantidad)
+   ↓
+   POST /sales (payload: [{ product_id, quantity }])
+   ↓
+   FastAPI:
+     1. Busca producto
+     2. Valida existe
+     3. Valida stock ≥ cantidad
+   ↓
+   SQLite (transacción):
+     - INSERT sale
+     - INSERT sale_item
+     - UPDATE products.stock (restar)
+   ↓
+   ✓ Respuesta: sale_id + total
+   ↓
+   Desktop: actualiza lista + limpia campos
+
+
+4. ARCHIVOS FUNCIONALES & ROL
+================================================================================
+
+Archivo                              Rol                      Estado
+─────────────────────────────────────────────────────────────────────────────
+backend/main.py                      Punto entrada FastAPI    ✅ Compilado
+backend/models.py                    SQLAlchemy models        ✅ OK
+backend/schemas.py                   Pydantic v2 schemas      ✅ Actualizado
+backend/db.py                        Config BD                ✅ SQLite dev
+backend/routers/products.py          Endpoint products        ✅ CRUD básico
+backend/routers/sales.py             Endpoint ventas          ✅ Validación stock
+desktop/main.py                      UI Desktop               ✅ Crear + Vender
+desktop/api_client.py                HTTP client              ✅ Funcional
+test_connection.py                   Test BD                  ✅ 100% pass
+
+
+5. QUÉ YA PUEDE HACER EL PROYECTO
+================================================================================
+
+Funcionalidades implementadas:
+
+1. CRUD Productos
+   ✅ Crear producto (nombre, precio, stock)
+   ✅ Listar productos
+   ✅ Ver stock en tiempo real
+
+2. Sistema de Ventas (CORE)
+   ✅ Seleccionar producto de lista
+   ✅ Ingresar cantidad
+   ✅ Validar stock antes de vender
+   ✅ Registrar venta en BD
+   ✅ Actualizar stock automáticamente
+   ✅ Mostrar total en respuesta
+
+3. Interfaz de Usuario
+   ✅ Formulario crear productos
+   ✅ Dropdown seleccionar productos
+   ✅ Campo cantidad
+   ✅ Botón "Vender"
+   ✅ Lista en tiempo real de productos
+
+4. Manejo de Errores Básico
+   ✅ Producto no encontrado (404)
+   ✅ Stock insuficiente (400)
+   ✅ Datos inválidos (400)
+   ✅ Mensajes en Desktop (messagebox)
+
+
+6. QUÉ QUEDA POR HACER
+================================================================================
+
+Fase 1 (Corto plazo - 1-2 días):
+❌ Flujo de venta end-to-end (test manual completo)
+❌ Reporte básico: ventas totales por día
+❌ Persistencia de datos (migración SQLite → PostgreSQL si es necesario)
+❌ Logs / auditoría de ventas
+
+Fase 2 (Mediano plazo):
+❌ Autenticación usuario simple (login Desktop)
+❌ Control de usuarios por roles
+❌ Historial de ventas con filtros
+❌ Dashboard básico
+
+Fase 3 (Largo plazo - Web):
+❌ Aplicación web pública (FastAPI + HTML/JS)
+❌ Sincronización Desktop ↔ Web
+❌ API documentada (OpenAPI/Swagger)
+
+Limitaciones actuales:
+- Sin autenticación
+- Sin reportes avanzados
+- Sin caché / optimizaciones
+- Sin validaciones complejas (ej: precios negativos, nombres vacíos)
+
+
+7. ESTADO ACTUAL DE LA EJECUCIÓN
+================================================================================
+
+Servidores/Procesos activos:
+✅ Backend FastAPI: http://127.0.0.1:8000 (CORRIENDO)
+✅ Desktop CustomTkinter: (LISTO PARA INICIAR)
+✅ Base de datos SQLite: ./storetic.db (CONECTADA Y VALIDADA)
+
+Entorno:
+✅ Entorno virtual: app_fastapi
+✅ Python: 3.12
+✅ Dependencias: fastapi, uvicorn, sqlalchemy, customtkinter, pydantic
+
+
+8. PRÓXIMOS PASOS
+================================================================================
+
+Recomendación: Ejecutar test end-to-end completo
+
+1. Backend corriendo ✅
+2. Desktop corriendo ✅
+3. Crear 2-3 productos desde UI
+4. Realizar venta (seleccionar, ingresar cantidad, vender)
+5. Verificar:
+   - Stock se restó correctamente
+   - Sale se registró en BD
+   - Desktop muestra lista actualizada
+   - No hay errores en logs
+
+
+================================================================================
+Fin del Informe
+================================================================================

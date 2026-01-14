@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.swp
+*.sqlite3
+*.db
+
+# Virtual environments
+app_fastapi/
+venv/
+.venv/
+
+# VS Code
+.vscode/
+
+# Logs
+*.log
+
+# Sistema
+Thumbs.db
+.DS_Store

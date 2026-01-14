@@ -1,0 +1,8 @@
+# Python dependencies
+fastapi
+uvicorn
+psycopg2-binary
+sqlalchemy
+pydantic
+customtkinter
+requests
