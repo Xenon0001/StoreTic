@@ -4,54 +4,52 @@ from api_client import get_products, create_product, create_sale, get_sales_summ
 from login_window import LoginWindow
 from tkinter import messagebox
 
+# Configuración inicial
 ctk.set_appearance_mode("dark")
-
 app = ctk.CTk()
 app.title("StoreTic Admin")
 app.geometry("480x420")
-app.withdraw()  # Ocultar hasta que se autentique
 
-# Mostrar login
-login_window = LoginWindow(app)
-app.wait_window(login_window.window)
-
-# Si no se autenticó, cerrar app
-if not login_window.is_authenticated():
-    app.destroy()
-    exit()
-
-# Mostrar app después de autenticar
-app.deiconify()
-
-# Formulario para crear productos
-name_entry = ctk.CTkEntry(app, placeholder_text="Nombre")
-price_entry = ctk.CTkEntry(app, placeholder_text="Precio")
-stock_entry = ctk.CTkEntry(app, placeholder_text="Stock")
-
-# Selección y venta
-product_option = ctk.CTkOptionMenu(app, values=["(cargando...)"])
-quantity_entry = ctk.CTkEntry(app, placeholder_text="Cantidad")
-
-products_box = ctk.CTkTextbox(app, height=140)
-
-# Estado local
+# --- 1. DEFINIR VARIABLES GLOBALES Y ESTADO ---
 _products_cache = []
 
+# --- 2. DEFINIR FUNCIONES DE LA LÓGICA ---
 def refresh():
     """Actualizar lista de productos y opciones"""
     global _products_cache
+    
+    # Intentar obtener datos (Protegido)
     try:
         _products_cache = get_products()
     except Exception as e:
-        messagebox.showerror("Error", f"No se pudo obtener productos:\n{e}")
+        # Si falla la conexión, cache vacío y aviso silencioso en consola o popup
+        print(f"Error conexión: {e}")
         _products_cache = []
 
+    # Limpiar UI
     products_box.delete("1.0", "end")
     names = []
-    for p in _products_cache:
-        products_box.insert("end", f"{p['id']}: {p['name']} — Stock: {p['stock']} — Precio: {p['price']}\n")
-        names.append(f"{p['id']} - {p['name']}")
 
+    # Procesar datos (Protegido contra datos corruptos)
+    try:
+        if not _products_cache:
+            products_box.insert("end", "No se pudieron cargar productos o no hay inventario.\n")
+        
+        for p in _products_cache:
+            # Usar .get para evitar errores si faltan claves
+            p_id = p.get('id', '?')
+            p_name = p.get('name', 'Sin nombre')
+            p_stock = p.get('stock', 0)
+            p_price = p.get('price', 0)
+            
+            info = f"{p_id}: {p_name} — Stock: {p_stock} — Precio: {p_price}\n"
+            products_box.insert("end", info)
+            names.append(f"{p_id} - {p_name}")
+            
+    except Exception as e:
+        products_box.insert("end", f"Error visualizando datos: {e}\n")
+
+    # Actualizar selector
     if names:
         product_option.configure(values=names)
         product_option.set(names[0])
@@ -66,104 +64,106 @@ def add_product():
             "price": float(price_entry.get()),
             "stock": int(stock_entry.get())
         }
-    except Exception:
-        messagebox.showerror("Error", "Datos de producto inválidos")
+    except ValueError:
+        messagebox.showerror("Error", "Precio y Stock deben ser números")
         return
 
     try:
-        resp = create_product(data)
-        if resp is not None and getattr(resp, 'status_code', 200) >= 400:
-            messagebox.showerror("Error", f"Error creando producto: {resp.text}")
-            return
+        create_product(data)
+        # Limpiar campos
+        name_entry.delete(0, "end")
+        price_entry.delete(0, "end")
+        stock_entry.delete(0, "end")
+        refresh()
+        messagebox.showinfo("Listo", "Producto creado")
     except Exception as e:
-        messagebox.showerror("Error", f"No se pudo crear producto:\n{e}")
-        return
-
-    name_entry.delete(0, "end")
-    price_entry.delete(0, "end")
-    stock_entry.delete(0, "end")
-    refresh()
-    messagebox.showinfo("Listo", "Producto creado")
+        messagebox.showerror("Error", f"No se pudo crear: {e}")
 
 def sell_selected():
     sel = product_option.get()
     if not sel or sel.startswith("(sin"):
-        messagebox.showwarning("Seleccionar", "Selecciona un producto")
         return
 
     try:
-        product_id = int(sel.split(" - ")[0])
-    except Exception:
-        messagebox.showerror("Error", "Producto seleccionado inválido")
-        return
-
-    try:
+        p_id = int(sel.split(" - ")[0])
         qty = int(quantity_entry.get())
-    except Exception:
-        messagebox.showerror("Error", "Cantidad inválida")
-        return
-
-    if qty <= 0:
-        messagebox.showerror("Error", "La cantidad debe ser mayor que 0")
-        return
-
-    sale_items = [{"product_id": product_id, "quantity": qty}]
-    try:
-        resp = create_sale(sale_items)
-        if resp is not None and getattr(resp, 'status_code', 200) >= 400:
-            messagebox.showerror("Error", f"Error en la venta: {resp.text}")
-            return
+        if qty <= 0: raise ValueError("Cantidad debe ser positiva")
+        
+        create_sale([{"product_id": p_id, "quantity": qty}])
+        
+        quantity_entry.delete(0, "end")
+        refresh()
+        messagebox.showinfo("Venta", "Venta exitosa")
+    except ValueError:
+        messagebox.showerror("Error", "Revisa la cantidad")
     except Exception as e:
-        messagebox.showerror("Error", f"No se pudo completar la venta:\n{e}")
-        return
-
-    quantity_entry.delete(0, "end")
-    refresh()
-    messagebox.showinfo("Venta", "Venta registrada correctamente")
+        messagebox.showerror("Error API", str(e))
 
 def show_sales_report():
-    """Abrir ventana de informe de ventas"""
     try:
         summary = get_sales_summary()
+        
+        # Ventana popup
+        rw = ctk.CTkToplevel(app)
+        rw.title("Reporte")
+        rw.geometry("300x200")
+        # Fix para que la ventana reporte quede encima
+        rw.attributes('-topmost', True) 
+        
+        ctk.CTkLabel(rw, text="Resumen de Ventas", font=("Arial", 14, "bold")).pack(pady=10)
+        ctk.CTkLabel(rw, text=f"Ventas Totales: {summary.get('total_sales_count', 0)}").pack()
+        ctk.CTkLabel(rw, text=f"Ingresos: ${summary.get('total_amount', 0):.2f}").pack()
+        
     except Exception as e:
-        messagebox.showerror("Error", f"No se pudo obtener el informe:\n{e}")
-        return
+        messagebox.showerror("Error", f"No se pudo obtener reporte: {e}")
+
+# --- 3. CONSTRUIR INTERFAZ (UI) ---
+
+# Sección Agregar
+ctk.CTkLabel(app, text="Agregar producto").pack(pady=(5, 0))
+name_entry = ctk.CTkEntry(app, placeholder_text="Nombre")
+name_entry.pack(pady=2)
+price_entry = ctk.CTkEntry(app, placeholder_text="Precio")
+price_entry.pack(pady=2)
+stock_entry = ctk.CTkEntry(app, placeholder_text="Stock")
+stock_entry.pack(pady=2)
+ctk.CTkButton(app, text="Guardar Nuevo", command=add_product).pack(pady=5)
+
+# Sección Venta
+ctk.CTkLabel(app, text="Ventas").pack(pady=(10, 0))
+product_option = ctk.CTkOptionMenu(app, values=["Cargando..."])
+product_option.pack(pady=2)
+quantity_entry = ctk.CTkEntry(app, placeholder_text="Cantidad")
+quantity_entry.pack(pady=2)
+ctk.CTkButton(app, text="Registrar Venta", fg_color="green", command=sell_selected).pack(pady=5)
+ctk.CTkButton(app, text="Ver Informe", fg_color="gray", command=show_sales_report).pack(pady=2)
+
+# Lista Productos
+products_box = ctk.CTkTextbox(app, height=100)
+products_box.pack(pady=10, padx=10, fill="both", expand=True)
+
+# --- 4. GESTIÓN DE ARRANQUE Y LOGIN ---
+
+app.withdraw()
+login_window = LoginWindow(app)
+app.wait_window(login_window.window)
+
+if login_window.is_authenticated():
+    # 1. Primero mostramos la ventana
+    app.deiconify()
     
-    # Crear ventana de informe
-    report_window = ctk.CTkToplevel(app)
-    report_window.title("Informe de ventas")
-    report_window.geometry("400x200")
+    # 2. Forzamos a que se dibuje la interfaz (evita la ventana en blanco)
+    app.update_idletasks()
+    app.update()
     
-    # Labels con datos
-    ctk.CTkLabel(report_window, text="Informe de Ventas", font=("Arial", 16, "bold")).pack(pady=20)
-    
-    total_count = summary.get("total_sales_count", 0)
-    total_amount = summary.get("total_amount", 0.0)
-    average_sale = summary.get("average_sale", 0.0)
-    
-    ctk.CTkLabel(report_window, text=f"Total de ventas: {total_count}", font=("Arial", 12)).pack(pady=5)
-    ctk.CTkLabel(report_window, text=f"Total dinero: ${total_amount:.2f}", font=("Arial", 12)).pack(pady=5)
-    ctk.CTkLabel(report_window, text=f"Promedio por venta: ${average_sale:.2f}", font=("Arial", 12)).pack(pady=5)
-    
-    ctk.CTkButton(report_window, text="Cerrar", command=report_window.destroy).pack(pady=15)
-
-# Layout
-ctk.CTkLabel(app, text="Agregar producto").pack(pady=(8, 0))
-name_entry.pack(pady=4)
-price_entry.pack(pady=4)
-stock_entry.pack(pady=4)
-ctk.CTkButton(app, text="Agregar", command=add_product).pack(pady=6)
-
-ctk.CTkLabel(app, text="\nVender producto").pack(pady=(8, 0))
-product_option.pack(pady=4)
-quantity_entry.pack(pady=4)
-ctk.CTkButton(app, text="Vender", fg_color="#1f6aa5", command=sell_selected).pack(pady=6)
-
-ctk.CTkButton(app, text="Informe de Ventas", fg_color="#2d6a4f", command=show_sales_report).pack(pady=6)
-
-ctk.CTkLabel(app, text="\nProductos").pack(pady=(8, 0))
-products_box.pack(pady=6, padx=8, fill="both")
-
-
-refresh()
-app.mainloop()
+    # 3. Ahora que la ventana existe y es visible, cargamos datos
+    try:
+        refresh()
+    except Exception as e:
+        print(f"Error inicializando datos: {e}")
+        
+    # 4. Iniciamos el bucle principal
+    app.mainloop()
+else:
+    app.quit() # Usa quit() en lugar de destroy() para cerrar el hilo
+    exit()

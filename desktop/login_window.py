@@ -13,18 +13,23 @@ class LoginWindow:
         # Crear ventana
         self.window = ctk.CTkToplevel(parent_app)
         self.window.title("StoreTic - Login")
-        self.window.geometry("300x200")
+        self.window.geometry("350x300")
         self.window.resizable(False, False)
         
         # Hacerla modal
-        self.window.transient(parent_app)
+        # Me aseguro que al cerrar la X de la ventana de login, no se quede colgado
+        self.window.protocol("WM_DELETE_WINDOW", self._on_closing)
+        
         self.window.grab_set()
         
         # Centrar ventana
         self.window.attributes('-topmost', True)
-        
-        # Crear UI
         self._create_ui()
+    
+    def _on_closing(self):
+        """Asegura que si cierran el login, la app no quede en el limbo"""
+        self.authenticated = False
+        self.window.destroy()
         
     def _create_ui(self):
         """Crear elementos de la interfaz"""
@@ -37,7 +42,7 @@ class LoginWindow:
         title_label.pack(pady=20)
         
         # Usuario
-        ctk.CTkLabel(self.window, text="Usuario:").pack(pady=(10, 0))
+        ctk.CTkLabel(self.window, text="Usuario:").pack(pady=(10, 0), fill="x")
         self.username_entry = ctk.CTkEntry(
             self.window,
             placeholder_text="admin"
@@ -46,11 +51,11 @@ class LoginWindow:
         self.username_entry.focus()
         
         # Contraseña
-        ctk.CTkLabel(self.window, text="Contraseña:").pack(pady=(10, 0))
+        ctk.CTkLabel(self.window, text="Contraseña:").pack(pady=(10, 0), fill="x")
         self.password_entry = ctk.CTkEntry(
             self.window,
             placeholder_text="Contraseña",
-            show="●"
+            show="*"
         )
         self.password_entry.pack(pady=5, padx=20, fill="x")
         
@@ -78,6 +83,7 @@ class LoginWindow:
         try:
             if login(username, password):
                 self.authenticated = True
+                self.window.grab_release() # IMPORTANTE: Liberar el foco antes de destruir
                 self.window.destroy()
             else:
                 messagebox.showerror("Error", "Usuario o contraseña incorrecto")
