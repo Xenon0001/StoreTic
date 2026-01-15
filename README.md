@@ -109,8 +109,8 @@ Asegúrate de tener instalados:
   ````
 
 2. **Configurar entorno backend**
+> En Windows
   ```bash
-    cd backend
     python -m venv .venv
     .\.venv\Scripts\Activate.ps1
     pip install -r requirements.txt
@@ -140,6 +140,14 @@ Asegúrate de tener instalados:
 
 ---
 
+## 🔐 Configuración de Entorno
+
+El backend utiliza variables de entorno para la conexión a la base de datos.
+
+Ejemplo de `DATABASE_URL`: postgresql://usuario:password@localhost:5432/storetic
+
+---
+
 ## 👨‍💻 Uso
 ### Pantalla de Login
 - Ingresa con tus credenciales de administrador.
@@ -163,8 +171,8 @@ Asegúrate de tener instalados:
   StoreTic/
   │
   ├── .ai/
-  │   ├──status_reports/
-  │   └── ...                   # Context Engeneer
+  │   ├──status_reports/        # Reportes de estado
+  │   └── ...                   # Ingeniería de contexto
   │
   ├── backend/                  # API REST (FastAPI)
   │   ├── routers/
@@ -178,17 +186,6 @@ Asegúrate de tener instalados:
   ├── .gitignore
   └── README.md
 ```
-
----
-
-## Tecnologías Utilizadas
-| Componente       | Tecnología    |
-| ---------------- | ------------- |
-| Frontend Desktop | CustomTkinter |
-| Backend API      | FastAPI       |
-| ORM              | SQLAlchemy    |
-| Base de datos    | PostgreSQL    |
-| Lenguaje         | Python 3.12   |
 
 ---
 
