@@ -1,4 +1,10 @@
 # StoreTic
+![Python](https://img.shields.io/badge/Python-3.12-blue)
+![FastAPI](https://img.shields.io/badge/FastAPI-Backend-green)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-blue)
+![CustomTkinter](https://img.shields.io/badge/Desktop-CustomTkinter-purple)
+![License](https://img.shields.io/badge/License-MIT-yellow)
+
 
 Sistema de **gestión de ventas e inventario** diseñado para pequeños comercios.
 
@@ -10,17 +16,16 @@ y otros clientes.
 
 ## 🚀 Tabla de Contenidos
 
-  - [Descripción](#descripción)
-  - [Arquitectura](#arquitectura)
-  - [Características](#características)
-  - [Instalación](#instalación)
-  - [Uso](#uso)
-  - [Estructura del Proyecto](#estructura-del-proyecto)
-  - [Tecnologías Utilizadas](#tecnologías-utilizadas)
-  - [Estado del Proyecto](#estado-del-proyecto)
-  - [Mejoras Futuras](#mejoras-futuras)
-  - [Autor](#autor)
-  - [Licencia](#licencia)
+- [Descripción](#descripción)
+- [Arquitectura](#arquitectura)
+- [Características](#características)
+- [Instalación](#instalación)
+- [Uso](#uso)
+- [Estructura del Proyecto](#estructura-del-proyecto)
+- [Tecnologías Utilizadas](#tecnologías-utilizadas)
+- [Estado del Proyecto](#estado-del-proyecto)
+- [Mejoras Futuras](#mejoras-futuras)
+- [Autor](#autor)
 
 ---
 
@@ -31,6 +36,20 @@ StoreTic es una solución desarrollada para comercios locales que necesitan digi
 La aplicación de escritorio (administrador) se comunica con un backend API que procesa y almacena la información en una base de datos PostgreSQL. Esta arquitectura permite integrar otras interfaces (como web o móvil) en el futuro sin cambiar la lógica de negocio.
 
 ---
+
+<!-- ## 🖼️ Capturas de Pantalla
+
+### Pantalla de Login
+![Login](screenshots/login.png)
+
+### Panel Principal
+![Dashboard](screenshots/dashboard.png)
+
+### Reporte de Ventas
+![Sales Report](screenshots/sales_report.png)
+
+
+--- -->
 
 ## 🏗️ Arquitectura
 
