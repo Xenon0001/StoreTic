@@ -42,3 +42,12 @@ class Product(Base):
     price = Column(Float, nullable=False)
     stock = Column(Integer, default=0)
 
+
+class Order(Base):
+    __tablename__ = "orders"
+
+    id = Column(Integer, primary_key=True, index=True)
+    customer_name = Column(String, nullable=False)
+    total_amount = Column(Float, nullable=False)
+    status = Column(String, default="PENDING")  # PENDING | CONFIRMED | CANCELED
+    created_at = Column(DateTime, default=datetime.utcnow)
