@@ -4,11 +4,14 @@ from api_client import get_products, create_product, create_sale, get_sales_summ
 from login_window import LoginWindow
 from tkinter import messagebox
 
+from api_client import (get_pending_orders, confirm_order, cancel_order)
+
+
 # Configuración inicial
 ctk.set_appearance_mode("dark")
 app = ctk.CTk()
 app.title("StoreTic Admin")
-app.geometry("480x420")
+app.geometry("580x520")
 
 # --- 1. DEFINIR VARIABLES GLOBALES Y ESTADO ---
 _products_cache = []
@@ -117,6 +120,62 @@ def show_sales_report():
     except Exception as e:
         messagebox.showerror("Error", f"No se pudo obtener reporte: {e}")
 
+def show_web_orders():
+    window = ctk.CTkToplevel(app)
+    window.title("Pedidos Web Pendientes")
+    window.geometry("500x400")
+
+    frame = ctk.CTkFrame(window)
+    frame.pack(fill="both", expand=True, padx=10, pady=10)
+
+    listbox = ctk.CTkTextbox(frame)
+    listbox.pack(fill="both", expand=True, pady=10)
+
+    selected_order_id = {"id": None}
+
+    def load_orders():
+        listbox.delete("1.0", "end")
+        try:
+            orders = get_pending_orders()
+            for order in orders:
+                line = f"ID {order['id']} | {order['customer_name']} | Total: {order['total_amount']}\n"
+                listbox.insert("end", line)
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+
+    def confirm_selected():
+        if selected_order_id["id"] is None:
+            messagebox.showwarning("Atención", "Selecciona un pedido")
+            return
+        confirm_order(selected_order_id["id"])
+        load_orders()
+
+    def cancel_selected():
+        if selected_order_id["id"] is None:
+            messagebox.showwarning("Atención", "Selecciona un pedido")
+            return
+        cancel_order(selected_order_id["id"])
+        load_orders()
+
+    def on_click(event):
+        try:
+            index = listbox.index("insert").split(".")[0]
+            line = listbox.get(f"{index}.0", f"{index}.end")
+            selected_order_id["id"] = int(line.split()[1])
+        except Exception:
+            selected_order_id["id"] = None
+
+    listbox.bind("<ButtonRelease-1>", on_click)
+
+    btn_frame = ctk.CTkFrame(frame)
+    btn_frame.pack(fill="x", pady=5)
+
+    ctk.CTkButton(btn_frame, text="Confirmar", command=confirm_selected).pack(side="left", padx=5)
+    ctk.CTkButton(btn_frame, text="Cancelar", command=cancel_selected).pack(side="left", padx=5)
+    ctk.CTkButton(btn_frame, text="Refrescar", command=load_orders).pack(side="right", padx=5)
+
+    load_orders()
+
 # --- 3. CONSTRUIR INTERFAZ (UI) ---
 
 # Sección Agregar
@@ -137,6 +196,10 @@ quantity_entry = ctk.CTkEntry(app, placeholder_text="Cantidad")
 quantity_entry.pack(pady=2)
 ctk.CTkButton(app, text="Registrar Venta", fg_color="green", command=sell_selected).pack(pady=5)
 ctk.CTkButton(app, text="Ver Informe", fg_color="gray", command=show_sales_report).pack(pady=2)
+
+# Pedido Web
+ctk.CTkButton(app, text="Pedidos Web", command=show_web_orders).pack(pady=5)
+
 
 # Lista Productos
 products_box = ctk.CTkTextbox(app, height=100)

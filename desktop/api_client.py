@@ -58,3 +58,21 @@ def login(username: str, password: str) -> bool:
         return result.get("success", False)
     except APIError:
         return False
+
+def get_pending_orders():
+    response = requests.get(f"{API_URL}/orders/pending")
+    response.raise_for_status()
+    return response.json()
+
+
+def confirm_order(order_id: int):
+    response = requests.post(f"{API_URL}/orders/{order_id}/confirm")
+    response.raise_for_status()
+    return response.json()
+
+
+def cancel_order(order_id: int):
+    response = requests.post(f"{API_URL}/orders/{order_id}/cancel")
+    response.raise_for_status()
+    return response.json()
+
